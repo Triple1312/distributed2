@@ -1,0 +1,90 @@
+version: "3.9"
+services:
+  web:
+    build: .
+    ports:
+      - "80:5000"
+#  redis:
+#    image: "redis:alpine"
+  postgres:
+    image: postgres:13.1
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "root" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=password
+      - APP_DB_USER=docker
+      - APP_DB_PASS=docker
+      - APP_DB_NAME=docker
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d/
+    ports:
+      - "5432:5432"
+#  database:
+#    build: ./db/acc_db
+#    container_name: postgres
+#    image: postgres:latest
+#    restart: always
+#    env_file: /db/acc_db/database.conf
+#    ports:
+#      - "5431:5431"
+#    volumes:
+#      - db_volume:/var/lib/postgresql
+#  db_test:
+#    image: postgres:latest
+#    container_name: db_postgres_test_container
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - db_test_vol:/var/lib/postgresql/data
+#    environment:
+#        POSTGRES_USER: yourUserDBName
+#        POSTGRES_PASSWORD: yourUserDBPassword
+#        POSTGRES_DB: yourDBName
+
+#  acc-c:
+#    build: ./db/acc_db
+#    ports:
+#      - "5001:5001"
+#  mov-c:
+#    build: ./db/mov_db
+#    ports:
+#      - "5002:5002"
+#  db:
+#    image: postgres:14.1-alpine
+#    restart: always
+#    environment:
+#      - POSTGRES_USER=postgres
+#      - POSTGRES_PASSWORD=postgres
+#    ports:
+#      - '5432:5432'
+#    volumes:
+#      - db:/var/lib/postgresql/data
+#      - ./db/init.sql:/docker-entrypoint-initdb.d/create_tables.sql
+
+  api:
+    build: ./db/api
+    image: python:3.10-alpine
+#    depends_on:
+#      - db
+    ports:
+      - 3000:3000
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: postgres
+    links:
+      - db
+    volumes:
+      - './db/api/:/code'
+
+volumes:
+  db_volume:
+  db:
+    driver: local
